@@ -26,17 +26,17 @@ vcpkg install boost-interprocess
 ## Example usage
 1. Instantiate a [ClInterproceMsgManager](ClInterprocMsgManager.hpp) within each process.
 
-2. Subscribe handler functions to the manager to handle messages with a specific topics:
+2. Subscribe handler functions to the manager to handle messages with specific topics:
 ```c++
 EInterprocError ClInterprocMsgManager::Subscribe(const std::string sAddressName, ClInterprocListener::fnNewMessage fnCallbackOnNewMsg, void * pCBCtx, const  std::string sTopic = "default");
 ```
-The handler function prototype looks like:
+The handler function prototype is defined as
 ```c++
-	typedef long(*fnNewMessage)(StMessage &, void*);
+typedef long(*fnNewMessage)(StMessage &, void*);
 ```
 with [StMessage](ClInterprocMsgQueue.hpp) being a simple struct, defining the message structure. 
 
-3. start listening and wait for messages
+3. start listening and wait for messages from process 2
 ```c++
 EInterprocError ClInterprocMsgManager::Start(const std::string sAddressName = "");
 ```
@@ -45,7 +45,7 @@ EInterprocError ClInterprocMsgManager::Start(const std::string sAddressName = ""
 StMessage stMsg("process 1", "process 2", "default", "hello world!");
 nErr = m_oInterProcMsgManager.Send(stMsg);
 ```
-<b>Example for process 1</b>
+<b>Example code for process 1</b>
 ```c++
 //1.)
 #include "ClInterprocMsgManager.hpp"
@@ -70,10 +70,10 @@ nErr = m_oInterProcMsgManager.Send(stMsg);
 ```
 
 ## Notes
-* Internally one of the two communicating processes creates shared memory and both processes will access this memory. This shared memory is structured as a message queue.
+* Internally one of the two communicating processes creates shared memory and both processes will access this memory block. This shared memory is structured as a message queue (including a mutex to be thread safe, as both processes obviously run in parallel).
 * The subscribing process will create the shared memory, the sender will only open it.
-* In case both processes listen and receive, two shared memory blocks will be created. Both processes will create one block and open one block.
-* This lib was designed for interprocess communication between two processes, only. 
-* Boost itsself provides <a href="https://www.boost.org/doc/libs/1_55_0/doc/html/interprocess/synchronization_mechanisms.html#interprocess.synchronization_mechanisms.message_queue">interprocess.message_queue</a>. 
-Unfortunatly it cannot handle a bidirectional communication, only unidirectional. Also undefined behaviour occurs when instantiating two boost-interprocess-message_queue. This is the actual reason for the developement of InterprocessMsg.
+* In case both processes listen and receive, two shared memory blocks will be created. Both processes will create one block and open another one.
+* This lib was designed for interprocess communication between <b>two</b> processes, only. 
+* Boost itsself provides the class <a href="https://www.boost.org/doc/libs/1_55_0/doc/html/interprocess/synchronization_mechanisms.html#interprocess.synchronization_mechanisms.message_queue">boost::interprocess::message_queue</a>. 
+Unfortunatly it cannot handle a bidirectional communication, only unidirectional. Also undefined behaviour occurs when instantiating two boost::interprocess::message_queue (one in each of the processes). This is the actual reason for the developement of InterprocessMsg to solve this (unexpected and unexplained) shortcoming.
 
